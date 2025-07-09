@@ -10,6 +10,7 @@ const GeneralContext = React.createContext({
 export const GeneralContextProvider = (props) => {
   const [isBuyWindowOpen, setIsBuyWindowOpen] = useState(false);
   const [selectedStockUID, setSelectedStockUID] = useState("");
+  const [holdingsRefreshKey, setHoldingsRefreshKey] = useState(0);
 
   const handleOpenBuyWindow = (uid) => {
     setIsBuyWindowOpen(true);
@@ -21,11 +22,17 @@ export const GeneralContextProvider = (props) => {
     setSelectedStockUID("");
   };
 
+  const refreshHoldings = () => {
+    setHoldingsRefreshKey((k) => k + 1);
+  };
+
   return (
     <GeneralContext.Provider
       value={{
         openBuyWindow: handleOpenBuyWindow,
         closeBuyWindow: handleCloseBuyWindow,
+        holdingsRefreshKey,
+        refreshHoldings,
       }}
     >
       {props.children}

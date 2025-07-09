@@ -1,16 +1,18 @@
-import React, {useEffect,useState} from 'react';
+import React, {useEffect,useState, useContext} from 'react';
 import {holdings} from '../data/data';
 import axios from 'axios';
 import { VerticalGraph } from './VerticalGraph';
+import GeneralContext from './GeneralContext';
 
 function Holdings() {
     const [allHoldings,setAllHoldings] = useState([]);
+    const { holdingsRefreshKey } = useContext(GeneralContext);
 
     useEffect(()=>{
         axios.get("http://localhost:3002/allHoldings").then((res)=>{
             setAllHoldings(res.data);
         });
-    },[]);
+    },[holdingsRefreshKey]);
 
 
     const labels = allHoldings.map((subArray)=>subArray["name"]);

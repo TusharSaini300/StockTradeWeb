@@ -10,6 +10,7 @@ import "./BuyActionWindow.css";
 const BuyActionWindow = ({ uid }) => {
   const [stockQuantity, setStockQuantity] = useState(1);
   const [stockPrice, setStockPrice] = useState(0.0);
+  const { refreshHoldings, closeBuyWindow } = React.useContext(GeneralContext);
 
   const handleBuyClick = () => {
     axios.post("http://localhost:3002/newOrder", {
@@ -17,9 +18,10 @@ const BuyActionWindow = ({ uid }) => {
       qty: stockQuantity,
       price: stockPrice,
       mode: "BUY",
+    }).then(() => {
+      refreshHoldings();
+      closeBuyWindow();
     });
-
-    GeneralContext.closeBuyWindow();
   };
 
   const handleCancelClick = () => {

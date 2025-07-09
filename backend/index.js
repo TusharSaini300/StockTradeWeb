@@ -6,6 +6,8 @@ const cors = require('cors');
 const {HoldingsModel} = require("../backend/model/HoldingsModel");
 const {PositionsModel} = require("../backend/model/PositionsModel");
 const {OrdersModel} = require('./model/OrdersModel');
+const { UserModel } = require('./model/UserModel');
+const bcrypt = require('bcrypt');
 
 const PORT = process.env.PORT || 3002;
 const uri = process.env.MONGO_URL; //database url 
@@ -187,6 +189,11 @@ app.get('/allPositions', async(req,res)=>{
   res.json(allPositions);
 });
 
+app.get('/allOrders', async (req, res) => {
+  let allOrders = await OrdersModel.find({});
+  res.json(allOrders);
+});
+
 app.post("/newOrder", async (req, res) => {
   let newOrder = new OrdersModel({
     name: req.body.name,
@@ -195,9 +202,77 @@ app.post("/newOrder", async (req, res) => {
     mode: req.body.mode,
   });
 
-  newOrder.save();
+  await newOrder.save();
+
+  // Update holdings if it's a BUY order
+  if (req.body.mode === 'BUY') {
+    const holding = await HoldingsModel.findOne({ name: req.body.name });
+    const qty = Number(req.body.qty);
+    const price = Number(req.body.price);
+    if (holding) {
+      // Update avg price: weighted average
+      const totalQty = holding.qty + qty;
+      const newAvg = ((holding.avg * holding.qty) + (price * qty)) / totalQty;
+      holding.qty = totalQty;
+      holding.avg = newAvg;
+      holding.price = price;
+      await holding.save();
+    } else {
+      // Create new holding
+      const newHolding = new HoldingsModel({
+        name: req.body.name,
+        qty: qty,
+        avg: price,
+        price: price,
+        net: '+0%',
+        day: '+0%'
+      });
+      await newHolding.save();
+    }
+  }
 
   res.send("Order saved!");
+});
+
+// Signup route
+app.post('/signup', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required.' });
+    }
+    try {
+        const existingUser = await UserModel.findOne({ email });
+        if (existingUser) {
+            return res.status(409).json({ message: 'User already exists.' });
+        }
+        const hashedPassword = await bcrypt.hash(password, 10);
+        const newUser = new UserModel({ email, password: hashedPassword });
+        await newUser.save();
+        res.status(201).json({ message: 'User registered successfully.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error.' });
+    }
+});
+
+// Login route
+app.post('/login', async (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+        return res.status(400).json({ message: 'Email and password are required.' });
+    }
+    try {
+        const user = await UserModel.findOne({ email });
+        if (!user) {
+            return res.status(401).json({ message: 'Invalid credentials.' });
+        }
+        const isMatch = await bcrypt.compare(password, user.password);
+        if (!isMatch) {
+            return res.status(401).json({ message: 'Invalid credentials.' });
+        }
+        res.status(200).json({ message: 'Login successful.' });
+    } catch (err) {
+        res.status(500).json({ message: 'Server error.' });
+    }
 });
 
 app.listen(PORT,()=>{

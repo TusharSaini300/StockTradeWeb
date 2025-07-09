@@ -5,7 +5,7 @@ function Orders() {
         <div className='orders'>
             <div className='no-orders'>
                 <p>You haven't placed any orders today</p>
-                <Link to={"/"} className='btn'>Get Started</Link>
+                <Link to={'/'} className='btn'>Get Started</Link>
             </div>
         </div>
      );
