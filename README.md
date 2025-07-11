@@ -191,5 +191,3 @@ JWT_SECRET=your_jwt_secret_key
 - Order management interface
 - Watchlist functionality
 - Fund management
-
-**Note**: This is a demo project inspired by Zerodha Company.
